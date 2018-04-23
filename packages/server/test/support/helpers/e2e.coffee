@@ -76,7 +76,7 @@ startServer = (obj) ->
   new Promise (resolve) ->
     srv.listen port, =>
       console.log "listening on port: #{port}"
-      onServer?(app)
+      onServer?(app, srv)
 
       resolve(srv)
 
@@ -217,6 +217,25 @@ module.exports = {
 
     stdout = ""
     stderr = ""
+
+    exit = (code) ->
+      if (expected = options.expectedExitCode)?
+        expect(expected).to.eq(code)
+
+      ## snapshot the stdout!
+      if options.snapshot
+        ## enable callback to modify stdout
+        if ostd = options.onStdout
+          stdout = ostd(stdout)
+
+        str = normalizeStdout(stdout)
+        snapshot(str)
+
+      return {
+        code:   code
+        stdout: stdout
+        stderr: stderr
+      }
 
     new Promise (resolve, reject) ->
       sp = cp.spawn "node", args, {env: _.omit(env, "CYPRESS_DEBUG")}
